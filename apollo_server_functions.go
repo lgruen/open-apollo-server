@@ -215,7 +215,7 @@ func encryptTrackKey(otherPublicKeyBytes []byte, trackKey []byte) ([]byte, error
 }
 
 type LoadTrackResult struct {
-	FileId   string // Highest quality OGG, base 62 encoded.
+	FileId   string // OGG file, base 62 encoded.
 	TrackKey string // Encrypted and base 64 encoded.
 }
 
@@ -225,14 +225,14 @@ func loadTrack(session *core.Session, trackId string, publicKey []byte) (*LoadTr
 		return nil, err
 	}
 
-	// Select the highest quality OGG file available.
+        // Prefer 160 kbps, to reduce bandwidth. Fall back to 96 kbps / 320 kbps.
 	var selectedFile *Spotify.AudioFile
 	var selectedFormat Spotify.AudioFile_Format
 	for _, file := range track.GetFile() {
 		format := file.GetFormat()
 		if (format == Spotify.AudioFile_OGG_VORBIS_96 && selectedFile == nil) ||
-			(format == Spotify.AudioFile_OGG_VORBIS_160 && (selectedFile == nil || selectedFormat == Spotify.AudioFile_OGG_VORBIS_96)) ||
-			format == Spotify.AudioFile_OGG_VORBIS_320 {
+			(format == Spotify.AudioFile_OGG_VORBIS_320 && (selectedFile == nil || selectedFormat == Spotify.AudioFile_OGG_VORBIS_96)) ||
+			format == Spotify.AudioFile_OGG_VORBIS_160 {
 			selectedFormat = format
 			selectedFile = file
 		}
