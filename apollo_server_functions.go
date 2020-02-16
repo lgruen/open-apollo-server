@@ -119,10 +119,10 @@ func apiRefresh(refreshToken string) (*ApiTokenResult, error) {
 		return nil, err
 	}
 
-        // Only return changed new refresh tokens.
-        if res.RefreshToken == refreshToken {
-          res.RefreshToken = ""
-        }
+	// Only return changed new refresh tokens.
+	if res.RefreshToken == refreshToken {
+		res.RefreshToken = ""
+	}
 
 	return &res, nil
 }
@@ -225,7 +225,7 @@ func loadTrack(session *core.Session, trackId string, publicKey []byte) (*LoadTr
 		return nil, err
 	}
 
-        // Prefer 160 kbps, to reduce bandwidth. Fall back to 96 kbps / 320 kbps.
+	// Prefer 160 kbps, to reduce bandwidth. Fall back to 96 kbps / 320 kbps.
 	var selectedFile *Spotify.AudioFile
 	var selectedFormat Spotify.AudioFile_Format
 	for _, file := range track.GetFile() {
@@ -293,7 +293,7 @@ func Track(w http.ResponseWriter, r *http.Request) {
 	track, err := loadTrack(session, req.TrackId, publicKey)
 	if err != nil {
 		http.Error(w, "Can't find track", http.StatusNotFound)
-		log.Printf("loadTrack error: %v", err)
+		log.Printf("loadTrack error for track ID %s: %v", req.TrackId, err)
 		return
 	}
 
@@ -342,7 +342,9 @@ func Tracks(w http.ResponseWriter, r *http.Request) {
 	for _, trackId := range req.TrackIds {
 		track, err := loadTrack(session, trackId, publicKey)
 
-		if err == nil {
+		if err != nil {
+			log.Printf("loadTrack error for track ID %s: %v", trackId, err)
+		} else {
 			res.Tracks = append(res.Tracks, TrackResponse{trackId, track.FileId, track.TrackKey})
 		}
 	}
@@ -398,7 +400,7 @@ func StorageResolve(w http.ResponseWriter, r *http.Request) {
 	url, err := trackUrl(req.AccessToken, req.FileId)
 	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
-		log.Printf("trackUrl error: %v", err)
+		log.Printf("trackUrl error for file ID %s: %v", req.FileId, err)
 		return
 	}
 
