@@ -214,18 +214,8 @@ func encryptTrackKey(otherPublicKeyBytes []byte, trackKey []byte) ([]byte, error
 	return append(ephemeralPublicKey, ct...), nil
 }
 
-type LoadTrackResult struct {
-	FileId   string // OGG file, base 62 encoded.
-	TrackKey string // Encrypted and base 64 encoded.
-}
-
-func loadTrack(session *core.Session, trackId string, publicKey []byte) (*LoadTrackResult, error) {
-	track, err := session.Mercury().GetTrack(utils.Base62ToHex(trackId))
-	if err != nil {
-		return nil, err
-	}
-
-	// Prefer 160 kbps, to reduce bandwidth. Fall back to 96 kbps / 320 kbps.
+func selectFile(track *Spotify.Track) *Spotify.AudioFile {
+	// Prefer 160 kbps, to reduce bandwidth. Fall back to 320 / 96 kbps.
 	var selectedFile *Spotify.AudioFile
 	var selectedFormat Spotify.AudioFile_Format
 	for _, file := range track.GetFile() {
@@ -237,6 +227,31 @@ func loadTrack(session *core.Session, trackId string, publicKey []byte) (*LoadTr
 			selectedFile = file
 		}
 	}
+        return selectedFile
+}
+
+type LoadTrackResult struct {
+	FileId   string // OGG file, base 62 encoded.
+	TrackKey string // Encrypted and base 64 encoded.
+}
+
+func loadTrack(session *core.Session, trackId string, publicKey []byte) (*LoadTrackResult, error) {
+	track, err := session.Mercury().GetTrack(utils.Base62ToHex(trackId))
+	if err != nil {
+		return nil, err
+	}
+
+        selectedFile := selectFile(track)
+
+        // Check alternatives if the track doesn't have any suitable files.
+        if selectedFile == nil {
+          for _, alt := range track.GetAlternative() {
+            selectedFile = selectFile(alt)
+            if selectedFile != nil {
+              break
+            }
+          }
+        }
 
 	if selectedFile == nil {
 		return nil, errors.New("Can't find OGG file")
