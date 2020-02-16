@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+        "io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -59,11 +60,18 @@ func apiToken(code string) (*ApiTokenResult, error) {
 }
 
 func Token(w http.ResponseWriter, r *http.Request) {
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+          http.Error(w, "Can't read body", http.StatusBadRequest)
+          return
+        }
+        log.Printf("request: %s", body)
+
 	var req struct {
 		Code string `json:"code"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "Can't decode request", http.StatusInternalServerError)
 		log.Printf("Decoding error: %v", err)
 		return
@@ -91,6 +99,8 @@ func Token(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(res)
 	fmt.Fprint(w, buf)
+
+        log.Printf("response: %s", buf)
 }
 
 func apiRefresh(refreshToken string) (*ApiTokenResult, error) {
@@ -128,11 +138,18 @@ func apiRefresh(refreshToken string) (*ApiTokenResult, error) {
 }
 
 func Refresh(w http.ResponseWriter, r *http.Request) {
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+          http.Error(w, "Can't read body", http.StatusBadRequest)
+          return
+        }
+        log.Printf("request: %s", body)
+
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "Can't decode request", http.StatusInternalServerError)
 		log.Printf("Decoding error: %v", err)
 		return
@@ -160,6 +177,8 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(res)
 	fmt.Fprint(w, buf)
+
+        log.Printf("response: %s", buf)
 }
 
 // From https://gist.github.com/KhaosT/73d56a3cd0496aefaa74c8e320602547.
@@ -279,13 +298,20 @@ type TrackResponse struct {
 }
 
 func Track(w http.ResponseWriter, r *http.Request) {
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+          http.Error(w, "Can't read body", http.StatusBadRequest)
+          return
+        }
+        log.Printf("request: %s", body)
+
 	var req struct {
 		TrackId   string `json:"track_id"`
 		Token     string `json:"token"`
 		PublicKey string `json:"public_key"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "Can't decode request", http.StatusInternalServerError)
 		log.Printf("Decoding error: %v", err)
 		return
@@ -321,16 +347,25 @@ func Track(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(res)
 	fmt.Fprint(w, buf)
+
+        log.Printf("response: %s", buf)
 }
 
 func Tracks(w http.ResponseWriter, r *http.Request) {
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+          http.Error(w, "Can't read body", http.StatusBadRequest)
+          return
+        }
+        log.Printf("request: %s", body)
+
 	var req struct {
 		TrackIds  []string `json:"track_ids"`
 		Token     string   `json:"token"`
 		PublicKey string   `json:"public_key"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "Can't decode request", http.StatusInternalServerError)
 		log.Printf("Decoding error: %v", err)
 		return
@@ -367,6 +402,8 @@ func Tracks(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(res)
 	fmt.Fprint(w, buf)
+
+        log.Printf("response: %s", buf)
 }
 
 func trackUrl(accessToken string, fileId string) (*string, error) {
@@ -401,12 +438,19 @@ func trackUrl(accessToken string, fileId string) (*string, error) {
 }
 
 func StorageResolve(w http.ResponseWriter, r *http.Request) {
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+          http.Error(w, "Can't read body", http.StatusBadRequest)
+          return
+        }
+        log.Printf("request: %s", body)
+
 	var req struct {
 		AccessToken string `json:"access_token"`
 		FileId      string `json:"file_id"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "Can't decode request", http.StatusInternalServerError)
 		log.Printf("Decoding error: %v", err)
 		return
@@ -428,4 +472,6 @@ func StorageResolve(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(res)
 	fmt.Fprint(w, buf)
+
+        log.Printf("response: %s", buf)
 }
